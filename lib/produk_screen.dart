@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'notifikasi_screen.dart';
 import 'akun_screen.dart';
+import 'keranjang_screen.dart';
 
 class ProdukScreen extends StatelessWidget {
   const ProdukScreen({super.key});
@@ -53,30 +54,42 @@ class ProdukScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Stack(
-                    children: [
-                      const Icon(Icons.shopping_cart, color: Colors.white, size: 28),
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: const BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const KeranjangScreen()),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(20),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Stack(
+                        children: [
+                          const Icon(Icons.shopping_cart, color: Colors.white, size: 28),
+                          Positioned(
+                            right: 0,
+                            top: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 16,
+                                minHeight: 16,
+                              ),
+                              child: const Text(
+                                "3",
+                                style: TextStyle(color: Colors.white, fontSize: 10),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
                           ),
-                          constraints: const BoxConstraints(
-                            minWidth: 16,
-                            minHeight: 16,
-                          ),
-                          child: const Text(
-                            "3",
-                            style: TextStyle(color: Colors.white, fontSize: 10),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ],
               ),
