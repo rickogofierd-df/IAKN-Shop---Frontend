@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'produk_screen.dart';
 import 'notifikasi_screen.dart';
@@ -55,6 +56,9 @@ class _HomeScreenState extends State<HomeScreen> {
   final Color darkBlue = const Color(0xFF00008B);
 
   final TextEditingController _searchController = TextEditingController();
+  final PageController _bannerController = PageController();
+  int _currentBannerIndex = 0;
+  Timer? _bannerTimer;
   String _searchQuery = "";
   String _selectedCategory = "Semua";
 
@@ -250,7 +254,29 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _startBannerTimer();
+  }
+
+  void _startBannerTimer() {
+    _bannerTimer?.cancel();
+    _bannerTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (_bannerController.hasClients) {
+        final nextIndex = (_currentBannerIndex + 1) % 3;
+        _bannerController.animateToPage(
+          nextIndex,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  @override
   void dispose() {
+    _bannerTimer?.cancel();
+    _bannerController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -758,70 +784,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // Promo Banner
-            Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: primaryBlue,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.greenAccent,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          "DIES NATALIS EXPO",
-                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        "Diskon 35%",
-                        style: TextStyle(color: Colors.white70, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    "Pekan Inovasi & Kewirausahaan\nMahasiswa",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    "Karya orisinal sivitas akademika IAKN\nAmbon: literatur teologi, media ajar, suvenir kriya...",
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                  const SizedBox(height: 12),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const KeranjangScreen()),
-                      );
-                    },
-                    icon: Icon(Icons.local_offer, size: 16, color: darkBlue),
-                    label: Text("Klaim Voucher di Keranjang", style: TextStyle(color: darkBlue, fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      minimumSize: const Size(0, 36),
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            // Promo Banner Slider (Swiper dengan 3 Banner)
+            _buildPromoBannerSlider(),
+            const SizedBox(height: 14),
 
             // Flash Sale Header
             Padding(
@@ -959,7 +924,197 @@ class _HomeScreenState extends State<HomeScreen> {
   // ==========================================
   // WIDGET HELPERS
   // ==========================================
-  Widget _buildCategoryItem(IconData icon, String label) {
+  Widget _buildPromoBannerSlider() {
+    final banners = [
+      // Banner 1: Dies Natalis Expo
+      {
+        "tag": "DIES NATALIS EXPO",
+        "tagBg": Colors.greenAccent,
+        "tagColor": const Color(0xFF064E3B),
+        "discount": "Diskon 35%",
+        "title": "Pekan Inovasi & Kewirausahaan\nMahasiswa",
+        "desc": "Karya orisinal sivitas akademika IAKN Ambon: literatur teologi, media ajar, suvenir kriya...",
+        "btnText": "Klaim Voucher di Keranjang",
+        "btnIcon": Icons.local_offer,
+        "btnTextColor": darkBlue,
+        "gradient": const [Color(0xFF0000FF), Color(0xFF00008B)],
+        "onTap": () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const KeranjangScreen()),
+          ).then((_) {
+            if (mounted) setState(() {});
+          });
+        },
+      },
+      // Banner 2: Literasi & Buku Ilmiah
+      {
+        "tag": "LITERASI KAMPUS",
+        "tagBg": const Color(0xFFFEF08A),
+        "tagColor": const Color(0xFF854D0E),
+        "discount": "Hemat 25%",
+        "title": "Bazar Buku Ilmiah &\nTeologi Kontekstual",
+        "desc": "Koleksi buku referensi & teologi terbitan dosen IAKN. Potongan harga khusus bagi mahasiswa.",
+        "btnText": "Jelajahi Buku Ilmiah",
+        "btnIcon": Icons.menu_book,
+        "btnTextColor": const Color(0xFF115E59),
+        "gradient": const [Color(0xFF0D9488), Color(0xFF115E59)],
+        "onTap": () => _onCategoryTapped("Buku/Ilmiah"),
+      },
+      // Banner 3: Seni & Suvenir Budaya Maluku
+      {
+        "tag": "KARYA KRIYA MALUKU",
+        "tagBg": const Color(0xFFFFEDD5),
+        "tagColor": const Color(0xFF9A3412),
+        "discount": "Edisi Budaya",
+        "title": "Pameran Suvenir &\nAlat Musik Tradisional",
+        "desc": "Dukung karya Sanggar Seni IAKN: Tifa kayu ukir khas Maluku, kain tenun, dan miniatur orisinal.",
+        "btnText": "Lihat Koleksi Seni",
+        "btnIcon": Icons.palette,
+        "btnTextColor": const Color(0xFF4C1D95),
+        "gradient": const [Color(0xFF7C3AED), Color(0xFF4C1D95)],
+        "onTap": () => _onCategoryTapped("Alat Musik"),
+      },
+    ];
+
+    return Column(
+      children: [
+        SizedBox(
+          height: 195,
+          child: PageView.builder(
+            controller: _bannerController,
+            onPageChanged: (index) {
+              setState(() {
+                _currentBannerIndex = index;
+              });
+            },
+            itemCount: banners.length,
+            itemBuilder: (context, index) {
+              final banner = banners[index];
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: banner["gradient"] as List<Color>,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (banner["gradient"] as List<Color>).first.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: banner["tagBg"] as Color,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                banner["tag"] as String,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: banner["tagColor"] as Color,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              banner["discount"] as String,
+                              style: const TextStyle(color: Colors.white70, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          banner["title"] as String,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            height: 1.25,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          banner["desc"] as String,
+                          style: const TextStyle(color: Colors.white70, fontSize: 12, height: 1.25),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: banner["onTap"] as VoidCallback,
+                      icon: Icon(banner["btnIcon"] as IconData, size: 16, color: banner["btnTextColor"] as Color),
+                      label: Text(
+                        banner["btnText"] as String,
+                        style: TextStyle(
+                          color: banner["btnTextColor"] as Color,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        minimumSize: const Size(0, 36),
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Indicator Dots
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(banners.length, (i) {
+            final isActive = _currentBannerIndex == i;
+            return GestureDetector(
+              onTap: () {
+                _bannerController.animateToPage(
+                  i,
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.easeInOut,
+                );
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                width: isActive ? 22 : 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: isActive ? primaryBlue : Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
+    Widget _buildCategoryItem(IconData icon, String label) {
     return Padding(
       padding: const EdgeInsets.only(right: 16.0),
       child: InkWell(
